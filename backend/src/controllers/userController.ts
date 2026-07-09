@@ -1,0 +1,161 @@
+import { Request, Response } from 'express';
+import User, { IUser } from '../models/User';
+
+interface AuthRequest extends Request {
+  user?: IUser;
+}
+
+// @desc    Get all users
+// @route   GET /api/users
+// @access  Private/Admin
+export const getUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const users = await User.find();
+    
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (error: any) {
+    console.error('Get users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+// @desc    Get single user
+// @route   GET /api/users/:id
+// @access  Private
+export const getUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error: any) {
+    console.error('Get user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { name, mobile, address } = req.body;
+    const userId = req.user?._id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { name, mobile, address },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user,
+    });
+  } catch (error: any) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+// @desc    Get farmers list
+// @route   GET /api/users/farmers
+// @access  Public
+export const getFarmers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const farmers = await User.find({ role: 'farmer' });
+    
+    res.status(200).json({
+      success: true,
+      count: farmers.length,
+      farmers,
+    });
+  } catch (error: any) {
+    console.error('Get farmers error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+// @desc    Get buyers list
+// @route   GET /api/users/buyers
+// @access  Private/Admin
+export const getBuyers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const buyers = await User.find({ role: 'buyer' });
+    
+    res.status(200).json({
+      success: true,
+      count: buyers.length,
+      buyers,
+    });
+  } catch (error: any) {
+    console.error('Get buyers error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/users/:id
+// @access  Private/Admin
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+};

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,11 @@ import {
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import Colors from '../../constants/Colors';
-import Typography from '../../constants/Typography';
-import Layout from '../../constants/Layout';
 
 export default function BuyerDashboard() {
-  const [userName, setUserName] = useState('Buyer');
+  const [userName, setUserName] = React.useState('Buyer');
 
-  useEffect(() => {
+  React.useEffect(() => {
     getUserName();
   }, []);
 
@@ -63,39 +60,37 @@ export default function BuyerDashboard() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Buyer Dashboard</Text>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Ionicons name="log-out-outline" size={24} color={Colors.secondary} />
+          <Ionicons name="log-out-outline" size={24} color="#2E7D32" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.welcomeCard}>
-          <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
+          <Ionicons name="storefront-outline" size={40} color="#2E7D32" />
           <Text style={styles.welcomeText}>Welcome, {userName}!</Text>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>Buyer</Text>
-          </View>
+          <Text style={styles.roleBadge}>Buyer</Text>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Ionicons name="cart-outline" size={32} color={Colors.secondary} />
+            <Ionicons name="cart-outline" size={32} color="#2E7D32" />
             <Text style={styles.statNumber}>0</Text>
             <Text style={styles.statLabel}>Orders</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="heart-outline" size={32} color={Colors.secondary} />
+            <Ionicons name="heart-outline" size={32} color="#2E7D32" />
             <Text style={styles.statNumber}>0</Text>
             <Text style={styles.statLabel}>Wishlist</Text>
           </View>
         </View>
 
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]}>
-            <Ionicons name="search-outline" size={24} color={Colors.white} />
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="search-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Browse Products</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionButtonSecondary]}>
-            <Ionicons name="cart-outline" size={24} color={Colors.white} />
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="cart-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>My Orders</Text>
           </TouchableOpacity>
         </View>
@@ -107,88 +102,86 @@ export default function BuyerDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F5F5F5',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Layout.spacing.xl,
-    paddingTop: Layout.spacing.xxl * 2,
-    paddingBottom: Layout.spacing.lg,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: '#E0E0E0',
   },
   headerTitle: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.black,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
   },
   logoutButton: {
-    padding: Layout.spacing.sm,
+    padding: 8,
   },
   scrollContent: {
-    padding: Layout.spacing.lg,
+    padding: 20,
   },
   welcomeCard: {
-    backgroundColor: Colors.white,
-    borderRadius: Layout.borderRadius.lg,
-    padding: Layout.spacing.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
-    marginBottom: Layout.spacing.lg,
-    shadowColor: Colors.shadow,
+    marginBottom: 20,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
   welcomeText: {
-    fontSize: Typography.fontSize.xxl,
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.black,
-    marginTop: Layout.spacing.md,
-    marginBottom: Layout.spacing.sm,
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginTop: 12,
+    marginBottom: 8,
   },
   roleBadge: {
-    backgroundColor: Colors.secondary + '15',
-    paddingHorizontal: Layout.spacing.md,
-    paddingVertical: Layout.spacing.xs,
-    borderRadius: Layout.borderRadius.md,
-  },
-  roleBadgeText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: Typography.fontWeight.semibold,
-    color: Colors.secondary,
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1976D2',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: Layout.spacing.lg,
+    marginBottom: 20,
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: Layout.borderRadius.lg,
-    padding: Layout.spacing.lg,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
-    marginHorizontal: Layout.spacing.xs,
-    shadowColor: Colors.shadow,
+    marginHorizontal: 5,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
   statNumber: {
-    fontSize: Typography.fontSize.xxl,
-    fontWeight: Typography.fontWeight.bold,
-    color: Colors.black,
-    marginTop: Layout.spacing.sm,
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginTop: 8,
   },
   statLabel: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.gray,
-    marginTop: Layout.spacing.xs,
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
   actionContainer: {
     flexDirection: 'row',
@@ -196,23 +189,18 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.md,
+    backgroundColor: '#1976D2',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    marginHorizontal: Layout.spacing.xs,
+    marginHorizontal: 5,
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  actionButtonPrimary: {
-    backgroundColor: Colors.secondary,
-  },
-  actionButtonSecondary: {
-    backgroundColor: Colors.primary,
-  },
   actionButtonText: {
-    color: Colors.white,
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.semibold,
-    marginLeft: Layout.spacing.sm,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
