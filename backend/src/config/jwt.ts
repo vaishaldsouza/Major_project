@@ -10,7 +10,7 @@ export const generateToken = (userId: string, role: string): string => {
   return jwt.sign(
     { userId, role },
     JWT_SECRET,
-    { expiresIn: JWT_EXPIRE }
+    { expiresIn: JWT_EXPIRE as any } // Fixed type issue
   );
 };
 

@@ -14,7 +14,7 @@ import { errorHandler } from './middleware/errorHandler';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10); // Convert to number
 
 // Connect to MongoDB
 connectDB();
@@ -37,8 +37,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
+// Health check - Fixed unused req parameter
+app.get('/api/health', (_req, res) => {
   res.status(200).json({
     success: true,
     message: 'Server is running',
@@ -49,11 +49,14 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
+// Start server - Listen on all interfaces
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🌐 Server running on http://0.0.0.0:${PORT} (all interfaces)`);
+  console.log(`📱 Emulator can access at: http://10.0.2.2:${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 MongoDB: ${process.env.MONGODB_URI || 'mongodb://localhost:27017/farm_marketplace'}`);
+  console.log(`📋 Press Ctrl+C to stop`);
 });
 
 export default app;

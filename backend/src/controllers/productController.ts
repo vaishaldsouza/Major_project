@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
-import Product, { IProduct } from '../models/Product';
-import User from '../models/User';
+import Product from '../models/Product';
 
 interface AuthRequest extends Request {
   user?: any;

@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import Order, { IOrder } from '../models/Order';
+import Order from '../models/Order';
 import Product from '../models/Product';
-import User from '../models/User';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -90,10 +89,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
   }
 };
 
-// @desc    Get all orders (Admin)
-// @route   GET /api/orders
-// @access  Private/Admin
-export const getOrders = async (req: Request, res: Response): Promise<void> => {
+// @desc    Get all orders (Admin) - Fixed unused req parameter
+export const getOrders = async (_req: Request, res: Response): Promise<void> => {
   try {
     const orders = await Order.find()
       .populate('buyer', 'name email mobile')

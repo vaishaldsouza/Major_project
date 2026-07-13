@@ -88,9 +88,9 @@ UserSchema.methods.comparePassword = async function (
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Remove password when converting to JSON
+// Remove password when converting to JSON - Fixed unused doc parameter
 UserSchema.set('toJSON', {
-  transform: function (doc, ret) {
+  transform: function (_doc, ret) {
     delete ret.password;
     delete ret.__v;
     return ret;

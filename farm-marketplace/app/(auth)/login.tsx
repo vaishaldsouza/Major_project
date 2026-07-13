@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/Colors';
 import Typography from '../../constants/Typography';
 import Layout from '../../constants/Layout';
+import api from '../services/api';
 
 type Role = 'farmer' | 'buyer' | 'admin';
 
@@ -41,6 +42,7 @@ export default function LoginScreen() {
 
     try {
       if (selectedRole === 'admin') {
+        // Admin login - still local for now
         if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
           const adminData = {
             id: 'admin_1',
@@ -54,37 +56,38 @@ export default function LoginScreen() {
           Alert.alert('Error', 'Invalid admin credentials');
         }
       } else {
-        const storageKey = selectedRole === 'farmer' ? 'farmers' : 'buyers';
-        const storedData = await AsyncStorage.getItem(storageKey);
-        const users = storedData ? JSON.parse(storedData) : [];
+        // Farmer/Buyer login - call backend API
+        const response = await api.post('/auth/login', {
+          email,
+          password,
+        });
 
-        const user = users.find(
-          (u: any) => u.email === email && u.password === password
-        );
-
-        if (user) {
-          const currentUser = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            mobile: user.mobile,
-            address: user.address,
-            role: selectedRole,
-          };
-          await AsyncStorage.setItem('currentUser', JSON.stringify(currentUser));
+        if (response.data.success) {
+          const user = response.data.user;
           
+          // Check if role matches selected role
+          if (user.role !== selectedRole) {
+            Alert.alert('Error', `This account is registered as ${user.role}, not ${selectedRole}`);
+            setIsLoading(false);
+            return;
+          }
+
+          // Store token and user data
+          await AsyncStorage.setItem('token', response.data.token);
+          await AsyncStorage.setItem('user', JSON.stringify(user));
+          await AsyncStorage.setItem('currentUser', JSON.stringify(user));
+
           if (selectedRole === 'farmer') {
             router.replace('/(farmer)');
           } else {
             router.replace('/(buyer)');
           }
-        } else {
-          Alert.alert('Error', 'Invalid credentials. Please try again.');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Invalid credentials. Please try again.';
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -7,11 +7,12 @@ interface CustomError extends Error {
   errors?: Record<string, any>;
 }
 
+// Fixed unused parameters
 export const errorHandler = (
   err: CustomError,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   let error = { ...err };
   error.message = err.message;

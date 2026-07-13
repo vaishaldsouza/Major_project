@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../constants/Colors';
 import Typography from '../../constants/Typography';
 import Layout from '../../constants/Layout';
+import api from '../services/api';
 
 type Role = 'farmer' | 'buyer';
 
@@ -76,59 +77,42 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
-      const storageKey = selectedRole === 'farmer' ? 'farmers' : 'buyers';
-      const storedData = await AsyncStorage.getItem(storageKey);
-      const users = storedData ? JSON.parse(storedData) : [];
-
-      const existingUser = users.find((u: any) => u.email === email);
-      if (existingUser) {
-        Alert.alert('Error', 'Email already registered. Please login.');
-        setIsLoading(false);
-        return;
-      }
-
-      const newUser = {
-        id: Date.now().toString(),
+      // Call backend API instead of AsyncStorage
+      const response = await api.post('/auth/register', {
         name: fullName,
-        mobile,
         email,
         password,
+        mobile,
         address,
-        createdAt: new Date().toISOString(),
-      };
-
-      users.push(newUser);
-      await AsyncStorage.setItem(storageKey, JSON.stringify(users));
-
-      const currentUser = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        mobile: newUser.mobile,
-        address: newUser.address,
         role: selectedRole,
-      };
-      await AsyncStorage.setItem('currentUser', JSON.stringify(currentUser));
+      });
 
-      Alert.alert(
-        'Success',
-        'Registration completed successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (selectedRole === 'farmer') {
-                router.replace('/(farmer)');
-              } else {
-                router.replace('/(buyer)');
-              }
+      if (response.data.success) {
+        // Store token and user data
+        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+
+        Alert.alert(
+          'Success',
+          'Registration completed successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                if (selectedRole === 'farmer') {
+                  router.replace('/(farmer)');
+                } else {
+                  router.replace('/(buyer)');
+                }
+              },
             },
-          },
-        ]
-      );
-    } catch (error) {
+          ]
+        );
+      }
+    } catch (error: any) {
       console.error('Registration error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Something went wrong. Please try again.';
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }

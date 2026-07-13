@@ -5,10 +5,8 @@ interface AuthRequest extends Request {
   user?: IUser;
 }
 
-// @desc    Get all users
-// @route   GET /api/users
-// @access  Private/Admin
-export const getUsers = async (req: Request, res: Response): Promise<void> => {
+// @desc    Get all users - Fixed unused req parameter
+export const getUsers = async (_req: Request, res: Response): Promise<void> => {
   try {
     const users = await User.find();
     
@@ -90,10 +88,8 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
-// @desc    Get farmers list
-// @route   GET /api/users/farmers
-// @access  Public
-export const getFarmers = async (req: Request, res: Response): Promise<void> => {
+// @desc    Get farmers list - Fixed unused req parameter
+export const getFarmers = async (_req: Request, res: Response): Promise<void> => {
   try {
     const farmers = await User.find({ role: 'farmer' });
     
@@ -111,10 +107,8 @@ export const getFarmers = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-// @desc    Get buyers list
-// @route   GET /api/users/buyers
-// @access  Private/Admin
-export const getBuyers = async (req: Request, res: Response): Promise<void> => {
+// @desc    Get buyers list - Fixed unused req parameter
+export const getBuyers = async (_req: Request, res: Response): Promise<void> => {
   try {
     const buyers = await User.find({ role: 'buyer' });
     
