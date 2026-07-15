@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Product from '../models/Product';
+import { listProductOnChain } from '../services/blockchainService';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -22,6 +23,11 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       isOrganic,
     } = req.body;
 
+    // List product on blockchain relayer
+    const blockchainResult = await listProductOnChain(req.user?.email || '', name, price);
+    const blockchainTxHash = blockchainResult.txHash;
+    const blockchainId = blockchainResult.blockchainId;
+
     const product = await Product.create({
       name,
       description,
@@ -33,6 +39,8 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       farmer: req.user?._id,
       location,
       isOrganic: isOrganic || false,
+      blockchainTxHash,
+      blockchainId,
     });
 
     res.status(201).json({

@@ -19,6 +19,7 @@ export interface IProduct extends Document {
   isOrganic: boolean;
   isAvailable: boolean;
   blockchainTxHash?: string;
+  blockchainId?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,6 +89,10 @@ const ProductSchema = new Schema<IProduct>(
     blockchainTxHash: {
       type: String,
       default: '',
+    },
+    blockchainId: {
+      type: Number,
+      default: null,
     },
   },
   {

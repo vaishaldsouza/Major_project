@@ -17,6 +17,7 @@ export interface IOrder extends Document {
   paymentStatus: 'pending' | 'paid' | 'failed';
   paymentMethod: 'cash' | 'bank_transfer' | 'blockchain';
   blockchainTxHash?: string;
+  blockchainOrderId?: number | null;
   shippingAddress: {
     address: string;
     city: string;
@@ -93,6 +94,10 @@ const OrderSchema = new Schema<IOrder>(
     blockchainTxHash: {
       type: String,
       default: '',
+    },
+    blockchainOrderId: {
+      type: Number,
+      default: null,
     },
     shippingAddress: {
       address: {

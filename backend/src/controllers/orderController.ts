@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Order from '../models/Order';
 import Product from '../models/Product';
+import { purchaseProductOnChain, confirmDeliveryOnChain, cancelOrderOnChain } from '../services/blockchainService';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -16,6 +17,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     // Validate items and calculate total
     let totalAmount = 0;
     const orderItems = [];
+    let farmerId: any = null;
 
     for (const item of items) {
       const product = await Product.findById(item.productId);
@@ -43,6 +45,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         return;
       }
 
+      if (!farmerId) {
+        farmerId = product.farmer;
+      }
+
       const itemTotal = product.price * item.quantity;
       totalAmount += itemTotal;
 
@@ -58,14 +64,33 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       await product.save();
     }
 
+    // Process on-chain payment if paymentMethod is blockchain
+    let blockchainTxHash = '';
+    let blockchainOrderId = null;
+
+    if (paymentMethod === 'blockchain' && orderItems.length > 0) {
+      const firstProduct = await Product.findById(orderItems[0].product);
+      if (firstProduct && firstProduct.blockchainId) {
+        const purchaseResult = await purchaseProductOnChain(
+          firstProduct.blockchainId,
+          req.user?.email || '',
+          totalAmount
+        );
+        blockchainTxHash = purchaseResult.txHash;
+        blockchainOrderId = purchaseResult.blockchainOrderId;
+      }
+    }
+
     const order = await Order.create({
       buyer: req.user?._id,
-      farmer: orderItems[0]?.product?.farmer, // Assuming all items from same farmer
+      farmer: farmerId,
       items: orderItems,
       totalAmount,
       shippingAddress,
       paymentMethod,
       notes,
+      blockchainTxHash,
+      blockchainOrderId,
     });
 
     // Populate order details
@@ -242,6 +267,13 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
     order.status = status;
     if (status === 'delivered') {
       order.deliveryDate = new Date();
+      if (order.blockchainOrderId) {
+        const txHash = await confirmDeliveryOnChain(order.blockchainOrderId);
+        if (txHash) {
+          order.blockchainTxHash = txHash;
+          order.paymentStatus = 'paid';
+        }
+      }
     }
     await order.save();
 
@@ -310,6 +342,12 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
     }
 
     order.status = 'cancelled';
+    if (order.blockchainOrderId) {
+      const txHash = await cancelOrderOnChain(order.blockchainOrderId);
+      if (txHash) {
+        order.blockchainTxHash = txHash;
+      }
+    }
     await order.save();
 
     res.status(200).json({

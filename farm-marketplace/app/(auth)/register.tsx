@@ -42,123 +42,127 @@ export default function RegisterScreen() {
     const mobileRegex = /^[0-9]{10}$/;
     return mobileRegex.test(mobile);
   };
-const handleRegister = async () => {
-  if (!fullName || !mobile || !email || !password || !confirmPassword || !address) {
-    Alert.alert('Error', 'Please fill in all fields');
-    return;
-  }
-
-  if (fullName.length < 2) {
-    Alert.alert('Error', 'Full name must be at least 2 characters');
-    return;
-  }
-
-  if (!validateMobile(mobile)) {
-    Alert.alert('Error', 'Please enter a valid 10-digit mobile number');
-    return;
-  }
-
-  if (!validateEmail(email)) {
-    Alert.alert('Error', 'Please enter a valid email address');
-    return;
-  }
-
-  if (password.length < 6) {
-    Alert.alert('Error', 'Password must be at least 6 characters');
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    Alert.alert('Error', 'Passwords do not match');
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    // DEBUG: Log everything
-    console.log('========================================');
-    console.log('📝 REGISTRATION ATTEMPT');
-    console.log('📝 API Base URL:', api.defaults.baseURL);
-    console.log('📝 Data being sent:');
-    console.log('  - Name:', fullName);
-    console.log('  - Email:', email);
-    console.log('  - Mobile:', mobile);
-    console.log('  - Address:', address);
-    console.log('  - Role:', selectedRole);
-    console.log('  - Password length:', password.length);
-    console.log('========================================');
-
-    const response = await api.post('/auth/register', {
-      name: fullName,
-      email: email,
-      password: password,
-      mobile: mobile,
-      address: address,
-      role: selectedRole,
-    });
-
-    console.log('✅ SUCCESS:', response.data);
-    console.log('========================================');
-
-    if (response.data.success) {
-      await AsyncStorage.setItem('token', response.data.token);
-      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
-      await AsyncStorage.setItem('currentUser', JSON.stringify({
-        ...response.data.user,
-        role: selectedRole,
-      }));
-
-      Alert.alert(
-        'Success',
-        'Registration completed successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (selectedRole === 'farmer') {
-                router.replace('/(farmer)');
-              } else {
-                router.replace('/(buyer)');
-              }
-            },
-          },
-        ]
-      );
-    }
-  } catch (error: any) {
-    console.log('========================================');
-    console.log('❌ REGISTRATION FAILED');
-    console.log('❌ Error object:', error);
-    
-    if (error.response) {
-      console.log('❌ Response status:', error.response.status);
-      console.log('❌ Response data:', JSON.stringify(error.response.data, null, 2));
-      console.log('❌ Response headers:', error.response.headers);
-    } else if (error.request) {
-      console.log('❌ No response received');
-      console.log('❌ Request:', error.request);
-      console.log('❌ URL attempted:', error.config?.url);
-      console.log('❌ Base URL:', api.defaults.baseURL);
+  const showAlert = (title: string, message: string, onOk?: () => void) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title}: ${message}`);
+      if (onOk) onOk();
     } else {
-      console.log('❌ Error message:', error.message);
+      Alert.alert(title, message, onOk ? [{ text: 'OK', onPress: onOk }] : undefined);
     }
-    console.log('========================================');
+  };
 
-    let errorMessage = 'Something went wrong. Please try again.';
-    if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.response?.data?.error) {
-      errorMessage = error.response.data.error;
-    } else if (error.message) {
-      errorMessage = error.message;
+  const handleRegister = async () => {
+    if (!fullName || !mobile || !email || !password || !confirmPassword || !address) {
+      showAlert('Error', 'Please fill in all fields');
+      return;
     }
 
-    Alert.alert('Registration Failed', errorMessage);
-  } finally {
-    setIsLoading(false);
-  }
-};
+    if (fullName.length < 2) {
+      showAlert('Error', 'Full name must be at least 2 characters');
+      return;
+    }
+
+    if (!validateMobile(mobile)) {
+      showAlert('Error', 'Please enter a valid 10-digit mobile number');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      showAlert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      showAlert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showAlert('Error', 'Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // DEBUG: Log everything
+      console.log('========================================');
+      console.log('📝 REGISTRATION ATTEMPT');
+      console.log('📝 API Base URL:', api.defaults.baseURL);
+      console.log('📝 Data being sent:');
+      console.log('  - Name:', fullName);
+      console.log('  - Email:', email);
+      console.log('  - Mobile:', mobile);
+      console.log('  - Address:', address);
+      console.log('  - Role:', selectedRole);
+      console.log('  - Password length:', password.length);
+      console.log('========================================');
+
+      const response = await api.post('/auth/register', {
+        name: fullName,
+        email: email,
+        password: password,
+        mobile: mobile,
+        address: address,
+        role: selectedRole,
+      });
+
+      console.log('✅ SUCCESS:', response.data);
+      console.log('========================================');
+
+      if (response.data.success) {
+        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        await AsyncStorage.setItem('currentUser', JSON.stringify({
+          ...response.data.user,
+          role: selectedRole,
+        }));
+
+        showAlert(
+          'Success',
+          'Registration completed successfully!',
+          () => {
+            if (selectedRole === 'farmer') {
+              router.replace('/(farmer)');
+            } else {
+              router.replace('/(buyer)');
+            }
+          }
+        );
+      }
+    } catch (error: any) {
+      console.log('========================================');
+      console.log('❌ REGISTRATION FAILED');
+      console.log('❌ Error object:', error);
+      
+      if (error.response) {
+        console.log('❌ Response status:', error.response.status);
+        console.log('❌ Response data:', JSON.stringify(error.response.data, null, 2));
+        console.log('❌ Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.log('❌ No response received');
+        console.log('❌ Request:', error.request);
+        console.log('❌ URL attempted:', error.config?.url);
+        console.log('❌ Base URL:', api.defaults.baseURL);
+      } else {
+        console.log('❌ Error message:', error.message);
+      }
+      console.log('========================================');
+
+      let errorMessage = 'Something went wrong. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showAlert('Registration Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const navigateToLogin = () => {
     router.back();

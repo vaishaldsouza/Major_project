@@ -1,7 +1,10 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+dns.setDefaultResultOrder('ipv4first');
 
 const connectDB = async (): Promise<void> => {
   try {

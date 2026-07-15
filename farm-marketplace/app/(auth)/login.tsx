@@ -32,9 +32,17 @@ export default function LoginScreen() {
   const ADMIN_EMAIL = 'admin@farm.com';
   const ADMIN_PASSWORD = 'admin123';
 
+  const showAlert = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title}: ${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
@@ -53,7 +61,7 @@ export default function LoginScreen() {
           await AsyncStorage.setItem('currentUser', JSON.stringify(adminData));
           router.replace('/(admin)');
         } else {
-          Alert.alert('Error', 'Invalid admin credentials');
+          showAlert('Error', 'Invalid admin credentials');
         }
       } else {
         // Farmer/Buyer login - call backend API
@@ -67,7 +75,7 @@ export default function LoginScreen() {
           
           // Check if role matches selected role
           if (user.role !== selectedRole) {
-            Alert.alert('Error', `This account is registered as ${user.role}, not ${selectedRole}`);
+            showAlert('Error', `This account is registered as ${user.role}, not ${selectedRole}`);
             setIsLoading(false);
             return;
           }
@@ -86,8 +94,8 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      const errorMessage = error.response?.data?.message || 'Invalid credentials. Please try again.';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = error.response?.data?.message || 'Login credentials do not match. Please try again.';
+      showAlert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +106,7 @@ export default function LoginScreen() {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert('Forgot Password', 'Please contact support to reset your password.');
+    showAlert('Forgot Password', 'Please contact support to reset your password.');
   };
 
   return (

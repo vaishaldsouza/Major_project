@@ -6,17 +6,39 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../services/api';
 
 export default function AdminDashboard() {
   const [userName, setUserName] = React.useState('Admin');
+  const [usersCount, setUsersCount] = React.useState(0);
+  const [productsCount, setProductsCount] = React.useState(0);
+  const [ordersCount, setOrdersCount] = React.useState(0);
 
   React.useEffect(() => {
     getUserName();
+    fetchCounts();
   }, []);
+
+  const fetchCounts = async () => {
+    try {
+      const [usersRes, productsRes, ordersRes] = await Promise.all([
+        api.get('/users'),
+        api.get('/products'),
+        api.get('/orders'),
+      ]);
+
+      if (usersRes.data.success) setUsersCount(usersRes.data.users.length);
+      if (productsRes.data.success) setProductsCount(productsRes.data.products.length);
+      if (ordersRes.data.success) setOrdersCount(ordersRes.data.orders.length);
+    } catch (error) {
+      console.error('Error fetching admin counts:', error);
+    }
+  };
 
   const getUserName = async () => {
     try {
@@ -31,28 +53,37 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('currentUser');
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Logout error:', error);
-            }
+    const performLogout = async () => {
+      try {
+        await AsyncStorage.removeItem('currentUser');
+        router.replace('/(auth)/login');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmLogout = window.confirm('Are you sure you want to logout?');
+      if (confirmLogout) {
+        performLogout();
+      }
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
           },
-        },
-      ]
-    );
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: performLogout,
+          },
+        ]
+      );
+    }
   };
 
   return (
@@ -74,38 +105,50 @@ export default function AdminDashboard() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Ionicons name="people-outline" size={32} color="#2E7D32" />
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>{usersCount}</Text>
             <Text style={styles.statLabel}>Total Users</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="cube-outline" size={32} color="#2E7D32" />
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>{productsCount}</Text>
             <Text style={styles.statLabel}>Products</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="receipt-outline" size={32} color="#2E7D32" />
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>{ordersCount}</Text>
             <Text style={styles.statLabel}>Orders</Text>
           </View>
         </View>
 
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(admin)/users')}
+          >
             <Ionicons name="people-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Manage Users</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(admin)/products')}
+          >
             <Ionicons name="cube-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Manage Products</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(admin)/orders')}
+          >
             <Ionicons name="receipt-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Manage Orders</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(admin)/settings')}
+          >
             <Ionicons name="settings-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Settings</Text>
           </TouchableOpacity>

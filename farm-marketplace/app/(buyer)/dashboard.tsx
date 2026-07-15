@@ -6,17 +6,32 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../services/api';
 
 export default function BuyerDashboard() {
   const [userName, setUserName] = React.useState('Buyer');
+  const [ordersCount, setOrdersCount] = React.useState(0);
 
   React.useEffect(() => {
     getUserName();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await api.get('/orders/buyer');
+      if (response.data.success) {
+        setOrdersCount(response.data.orders.length);
+      }
+    } catch (error) {
+      console.error('Error fetching order stats:', error);
+    }
+  };
 
   const getUserName = async () => {
     try {
@@ -31,28 +46,37 @@ export default function BuyerDashboard() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('currentUser');
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Logout error:', error);
-            }
+    const performLogout = async () => {
+      try {
+        await AsyncStorage.removeItem('currentUser');
+        router.replace('/(auth)/login');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmLogout = window.confirm('Are you sure you want to logout?');
+      if (confirmLogout) {
+        performLogout();
+      }
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
           },
-        },
-      ]
-    );
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: performLogout,
+          },
+        ]
+      );
+    }
   };
 
   return (
@@ -74,7 +98,7 @@ export default function BuyerDashboard() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Ionicons name="cart-outline" size={32} color="#2E7D32" />
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>{ordersCount}</Text>
             <Text style={styles.statLabel}>Orders</Text>
           </View>
           <View style={styles.statCard}>
@@ -85,11 +109,17 @@ export default function BuyerDashboard() {
         </View>
 
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(buyer)/browse')}
+          >
             <Ionicons name="search-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Browse Products</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(buyer)/orders')}
+          >
             <Ionicons name="cart-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>My Orders</Text>
           </TouchableOpacity>

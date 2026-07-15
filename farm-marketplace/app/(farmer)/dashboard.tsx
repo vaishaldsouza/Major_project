@@ -6,17 +6,40 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../services/api';
 
 export default function FarmerDashboard() {
   const [userName, setUserName] = React.useState('Farmer');
+  const [productsCount, setProductsCount] = React.useState(0);
+  const [ordersCount, setOrdersCount] = React.useState(0);
 
   React.useEffect(() => {
     getUserName();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [productsRes, ordersRes] = await Promise.all([
+        api.get('/products/farmer/my-products'),
+        api.get('/orders/farmer'),
+      ]);
+
+      if (productsRes.data.success) {
+        setProductsCount(productsRes.data.products.length);
+      }
+      if (ordersRes.data.success) {
+        setOrdersCount(ordersRes.data.orders.length);
+      }
+    } catch (error) {
+      console.error('Error fetching farmer stats:', error);
+    }
+  };
 
   const getUserName = async () => {
     try {
@@ -31,28 +54,37 @@ export default function FarmerDashboard() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('currentUser');
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Logout error:', error);
-            }
+    const performLogout = async () => {
+      try {
+        await AsyncStorage.removeItem('currentUser');
+        router.replace('/(auth)/login');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmLogout = window.confirm('Are you sure you want to logout?');
+      if (confirmLogout) {
+        performLogout();
+      }
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
           },
-        },
-      ]
-    );
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: performLogout,
+          },
+        ]
+      );
+    }
   };
 
   return (
@@ -74,22 +106,28 @@ export default function FarmerDashboard() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Ionicons name="cube-outline" size={32} color="#2E7D32" />
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>{productsCount}</Text>
             <Text style={styles.statLabel}>Products Listed</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="receipt-outline" size={32} color="#2E7D32" />
-            <Text style={styles.statNumber}>0</Text>
+            <Text style={styles.statNumber}>{ordersCount}</Text>
             <Text style={styles.statLabel}>Total Orders</Text>
           </View>
         </View>
 
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(farmer)/add-product')}
+          >
             <Ionicons name="add-circle-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>Add New Product</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(farmer)/products')}
+          >
             <Ionicons name="list-outline" size={24} color="#fff" />
             <Text style={styles.actionButtonText}>View Products</Text>
           </TouchableOpacity>

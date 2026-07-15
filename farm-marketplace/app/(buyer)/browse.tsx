@@ -1,0 +1,512 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  SafeAreaView,
+  Platform,
+  Image,
+} from 'react-native';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import Colors from '../../constants/Colors';
+import Typography from '../../constants/Typography';
+import Layout from '../../constants/Layout';
+import api from '../services/api';
+
+interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  quantity: number;
+  unit: string;
+  isOrganic: boolean;
+  blockchainId?: number;
+  images?: string[];
+  location: {
+    address: string;
+  };
+  farmer: {
+    name: string;
+    email: string;
+  };
+}
+
+const CATEGORIES = ['all', 'vegetables', 'fruits', 'grains', 'dairy', 'organic'];
+
+export default function BrowseScreen() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/products');
+      if (response.data.success) {
+        setProducts(response.data.products);
+        setFilteredProducts(response.data.products);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      if (Platform.OS === 'web') {
+        window.alert('Error: Failed to load products. Make sure backend is running.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let result = products;
+
+    // Filter by search query
+    if (search.trim() !== '') {
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(search.toLowerCase()) ||
+          p.description.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'organic') {
+        result = result.filter((p) => p.isOrganic);
+      } else {
+        result = result.filter((p) => p.category === selectedCategory);
+      }
+    }
+
+    setFilteredProducts(result);
+  }, [search, selectedCategory, products]);
+
+  const handleBuy = (product: Product) => {
+    router.push({
+      pathname: '/(buyer)/checkout',
+      params: {
+        productId: product._id,
+        name: product.name,
+        price: product.price.toString(),
+        unit: product.unit,
+        farmerName: product.farmer.name,
+        availableQuantity: product.quantity.toString(),
+      },
+    });
+  };
+
+  const renderProductCard = ({ item }: { item: Product }) => (
+    <View style={styles.card}>
+      {item.images && item.images[0] ? (
+        <Image source={{ uri: item.images[0] }} style={styles.productImage} />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <Ionicons name="storefront-outline" size={40} color={Colors.secondary} />
+          <Text style={styles.placeholderText}>Farm Fresh Produce</Text>
+        </View>
+      )}
+
+      <View style={styles.cardHeader}>
+        <View>
+          <Text style={styles.productName}>{item.name}</Text>
+          <Text style={styles.farmerName}>by {item.farmer.name}</Text>
+        </View>
+        {item.isOrganic && (
+          <View style={styles.organicBadge}>
+            <Text style={styles.organicText}>Organic</Text>
+          </View>
+        )}
+      </View>
+
+      <Text style={styles.description} numberOfLines={2}>
+        {item.description}
+      </Text>
+
+      <View style={styles.infoRow}>
+        <View style={styles.infoCol}>
+          <Ionicons name="location-outline" size={16} color={Colors.gray} />
+          <Text style={styles.infoText} numberOfLines={1}>
+            {item.location.address}
+          </Text>
+        </View>
+        <View style={styles.infoCol}>
+          <Ionicons name="cube-outline" size={16} color={Colors.gray} />
+          <Text style={styles.infoText}>
+            Stock: {item.quantity} {item.unit}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.blockchainBadgeContainer}>
+        {item.blockchainId !== undefined && item.blockchainId !== null ? (
+          <View style={styles.blockchainBadge}>
+            <Ionicons name="link-outline" size={14} color="#2E7D32" />
+            <Text style={styles.blockchainText}>On-Chain Verified (ID: {item.blockchainId})</Text>
+          </View>
+        ) : (
+          <View style={[styles.blockchainBadge, styles.dbBadge]}>
+            <Ionicons name="server-outline" size={14} color="#666" />
+            <Text style={[styles.blockchainText, styles.dbText]}>Database Only</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.cardFooter}>
+        <Text style={styles.price}>
+          ₹{item.price} <Text style={styles.unit}>/ {item.unit}</Text>
+        </Text>
+        <TouchableOpacity
+          style={styles.buyButton}
+          onPress={() => handleBuy(item)}
+          disabled={item.quantity <= 0}
+        >
+          <Text style={styles.buyButtonText}>
+            {item.quantity > 0 ? 'Buy Now' : 'Out of Stock'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.secondary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Browse Marketplace</Text>
+        <TouchableOpacity onPress={fetchProducts} style={styles.refreshButton}>
+          <Ionicons name="refresh" size={20} color={Colors.secondary} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <View style={styles.searchWrapper}>
+          <Ionicons name="search" size={20} color={Colors.gray} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search fresh products..."
+            placeholderTextColor={Colors.gray}
+            value={search}
+            onChangeText={setSearch}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={20} color={Colors.gray} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.categoryContainer}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={CATEGORIES}
+          keyExtractor={(item) => item}
+          contentContainerStyle={styles.categoryList}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.categoryTab,
+                selectedCategory === item && styles.categoryTabActive,
+              ]}
+              onPress={() => setSelectedCategory(item)}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === item && styles.categoryTextActive,
+                ]}
+              >
+                {item.charAt(0).toUpperCase() + item.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.secondary} />
+          <Text style={styles.loadingText}>Fetching farm fresh products...</Text>
+        </View>
+      ) : filteredProducts.length === 0 ? (
+        <View style={styles.centerContainer}>
+          <Ionicons name="search-outline" size={60} color={Colors.gray} />
+          <Text style={styles.noProductsTitle}>No Products Found</Text>
+          <Text style={styles.noProductsDesc}>Try selecting another category or check your search keyword.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredProducts}
+          keyExtractor={(item) => item._id}
+          renderItem={renderProductCard}
+          contentContainerStyle={styles.productList}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Layout.spacing.lg,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
+    paddingBottom: Layout.spacing.md,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  backButton: {
+    padding: Layout.spacing.xs,
+  },
+  refreshButton: {
+    padding: Layout.spacing.xs,
+  },
+  headerTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.black,
+  },
+  searchContainer: {
+    padding: Layout.spacing.md,
+    backgroundColor: Colors.white,
+  },
+  searchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.lighterGray,
+    borderRadius: Layout.borderRadius.md,
+    paddingHorizontal: Layout.spacing.md,
+    height: 48,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  searchIcon: {
+    marginRight: Layout.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: Typography.fontSize.md,
+    color: Colors.black,
+  },
+  categoryContainer: {
+    backgroundColor: Colors.white,
+    paddingBottom: Layout.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  categoryList: {
+    paddingHorizontal: Layout.spacing.md,
+  },
+  categoryTab: {
+    paddingHorizontal: Layout.spacing.lg,
+    paddingVertical: Layout.spacing.sm,
+    borderRadius: Layout.borderRadius.xl,
+    backgroundColor: Colors.lighterGray,
+    marginRight: Layout.spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  categoryTabActive: {
+    backgroundColor: Colors.secondary,
+    borderColor: Colors.secondary,
+  },
+  categoryText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.gray,
+  },
+  categoryTextActive: {
+    color: Colors.white,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Layout.spacing.xl,
+  },
+  loadingText: {
+    marginTop: Layout.spacing.md,
+    color: Colors.gray,
+  },
+  noProductsTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.black,
+    marginTop: Layout.spacing.md,
+  },
+  noProductsDesc: {
+    color: Colors.gray,
+    textAlign: 'center',
+    marginTop: Layout.spacing.xs,
+  },
+  productList: {
+    padding: Layout.spacing.md,
+  },
+  buyButtonText: {
+    color: Colors.white,
+    fontWeight: Typography.fontWeight.bold,
+    fontSize: Typography.fontSize.sm,
+  },
+  productImage: {
+    width: '120%',
+    height: 180,
+    marginLeft: '-10%',
+    marginTop: '-10%',
+    marginBottom: Layout.spacing.md,
+    resizeMode: 'cover',
+  },
+  placeholderImage: {
+    width: '120%',
+    height: 120,
+    marginLeft: '-10%',
+    marginTop: '-10%',
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Layout.spacing.md,
+  },
+  placeholderText: {
+    fontSize: 10,
+    color: '#2E7D32',
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.lg,
+    marginBottom: Layout.spacing.md,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Layout.spacing.sm,
+  },
+  productName: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.black,
+  },
+  farmerName: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.gray,
+    marginTop: 2,
+  },
+  organicBadge: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: Layout.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Layout.borderRadius.xs,
+  },
+  organicText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#2E7D32',
+  },
+  description: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.gray,
+    lineHeight: 20,
+    marginBottom: Layout.spacing.md,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Layout.spacing.sm,
+  },
+  infoCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  infoText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.gray,
+    marginLeft: 4,
+  },
+  blockchainBadgeContainer: {
+    marginBottom: Layout.spacing.md,
+  },
+  blockchainBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: Layout.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Layout.borderRadius.sm,
+    alignSelf: 'flex-start',
+  },
+  dbBadge: {
+    backgroundColor: '#F5F5F5',
+  },
+  blockchainText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#2E7D32',
+    marginLeft: 4,
+  },
+  dbText: {
+    color: '#666',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: Layout.spacing.md,
+  },
+  price: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.black,
+  },
+  unit: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.gray,
+    fontWeight: 'normal',
+  },
+  buyButton: {
+    backgroundColor: Colors.secondary,
+    borderRadius: Layout.borderRadius.md,
+    paddingHorizontal: Layout.spacing.xl,
+    paddingVertical: Layout.spacing.sm,
+  },
+  buyButtonText: {
+    color: Colors.white,
+    fontWeight: Typography.fontWeight.bold,
+    fontSize: Typography.fontSize.sm,
+  },
+}) as any;
