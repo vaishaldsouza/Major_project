@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 
 export interface CartProduct {
@@ -53,11 +54,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const refreshCart = useCallback(async () => {
     try {
+      // Cart is buyer-only — skip for farmers and admins to avoid 403
+      const userData = await AsyncStorage.getItem('currentUser');
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.role !== 'buyer') {
+          setItems([]);
+          setSummary(emptySummary);
+          return;
+        }
+      } else {
+        // Not logged in yet
+        return;
+      }
+
       setLoading(true);
       const res = await api.get('/cart');
       if (res.data.success) applyResponse(res.data);
     } catch (error) {
-      // Buyer-only endpoint; ignore for other roles
       setItems([]);
       setSummary(emptySummary);
     } finally {
