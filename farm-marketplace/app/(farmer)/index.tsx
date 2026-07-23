@@ -284,7 +284,7 @@ export default function FarmerDashboard() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.actionContainer}>
+        <View style={[styles.actionContainer, { marginTop: Layout.spacing.lg }]}>
           <TouchableOpacity
             style={[styles.actionButton, styles.actionButtonPrimary]}
             onPress={() => router.push('/(farmer)/orders')}
