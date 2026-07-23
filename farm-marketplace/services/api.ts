@@ -1,21 +1,11 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-import * as Device from 'expo-device';
 
-// Use your computer's LAN IP. Run `ipconfig` and use the IPv4 address for your
-// active network adapter (the one your phone shares with your PC).
-let BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://172.17.1.11:5000/api';
-
-// Map localhost to emulator/LAN IP for mobile devices
-if (Platform.OS !== 'web' && BASE_URL.includes('localhost')) {
-  if (Platform.OS === 'android' && !Device.isDevice) {
-    BASE_URL = BASE_URL.replace('localhost', '10.0.2.2');
-  } else {
-    // Default to the PC's active LAN/Wi-Fi IP (obtained from ipconfig)
-    BASE_URL = BASE_URL.replace('localhost', '172.17.1.11');
-  }
-}
+// Set EXPO_PUBLIC_API_URL in farm-marketplace/.env
+// For physical Android device: http://<your-PC-LAN-IP>:5000/api
+// For Android emulator:        http://10.0.2.2:5000/api
+// Run `ipconfig` on your PC to find the correct LAN IP.
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.137.1:5000/api';
 
 console.log('📡 API Base URL:', BASE_URL);
 
@@ -44,7 +34,7 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    console.log('✅ API Response:', response.status);
+    console.log('✅ API Response:', response.status, response.config?.method?.toUpperCase(), response.config?.url);
     return response;
   },
   (error) => {
