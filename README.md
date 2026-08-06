@@ -270,4 +270,5 @@ Successfully tested:
 - Escrow Payments
 - Product Traceability
 - Analytics Dashboard
+- Revenue Dashboard
 - Final Testing & Deployment
