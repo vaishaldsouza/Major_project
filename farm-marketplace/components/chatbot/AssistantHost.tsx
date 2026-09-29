@@ -17,10 +17,20 @@ export default function AssistantHost() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const role = user?.role === 'farmer' || user?.role === 'buyer' ? user.role : null;
-  const inRoleArea = role !== null && (pathname === `/${role}` || pathname.startsWith(`/${role}/`));
+  // Normalize role to ensure case-insensitivity
+  const normalizedRole = user?.role ? user.role.toLowerCase().trim() : null;
+  const role = normalizedRole === 'farmer' || normalizedRole === 'buyer' ? (normalizedRole as 'farmer' | 'buyer') : null;
 
-  if (!role || !inRoleArea) return null;
+  // Check if current route is within the user's role portal
+  const currentPath = (pathname || '').toLowerCase();
+  const inRoleArea =
+    role !== null &&
+    (currentPath.includes(`/${role}`) ||
+      currentPath.includes(role) ||
+      currentPath === '/' ||
+      currentPath === '');
+
+  if (!user || !role || !inRoleArea) return null;
 
   return (
     <>
