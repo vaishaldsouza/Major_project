@@ -161,14 +161,23 @@ export default function BuyerDashboard() {
     }
   };
 
-  // Get current quantity of item in cart
+  // Get current quantity of item in cart safely
   const getCartQuantity = (productId: string) => {
-    const item = cart.items.find((i) => (typeof i.product === 'string' ? i.product === productId : i.product._id === productId));
+    if (!cart || !Array.isArray(cart.items)) return 0;
+    const item = cart.items.find((i) =>
+      typeof i.product === 'string' ? i.product === productId : i.product?._id === productId
+    );
     return item ? item.quantity : 0;
   };
 
   const handleIncrement = async (productId: string) => {
-    const item = cart.items.find((i) => (typeof i.product === 'string' ? i.product === productId : i.product._id === productId));
+    if (!cart || !Array.isArray(cart.items)) {
+      await addToCart(productId, 1);
+      return;
+    }
+    const item = cart.items.find((i) =>
+      typeof i.product === 'string' ? i.product === productId : i.product?._id === productId
+    );
     if (item) {
       await updateQuantity(productId, item.quantity + 1);
     } else {
@@ -177,7 +186,10 @@ export default function BuyerDashboard() {
   };
 
   const handleDecrement = async (productId: string) => {
-    const item = cart.items.find((i) => (typeof i.product === 'string' ? i.product === productId : i.product._id === productId));
+    if (!cart || !Array.isArray(cart.items)) return;
+    const item = cart.items.find((i) =>
+      typeof i.product === 'string' ? i.product === productId : i.product?._id === productId
+    );
     if (item) {
       if (item.quantity <= 1) {
         await removeFromCart(productId);
@@ -720,7 +732,7 @@ export default function BuyerDashboard() {
         accessibilityLabel="Open Cart"
       >
         <Ionicons name="bag-handle-outline" size={24} color="#FFFFFF" />
-        {summary.itemCount > 0 && (
+        {summary && summary.itemCount > 0 && (
           <View style={styles.badgeCount}>
             <Text style={styles.badgeCountText}>{summary.itemCount}</Text>
           </View>
